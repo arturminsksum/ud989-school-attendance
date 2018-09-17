@@ -29,56 +29,88 @@
 
 /* STUDENT APPLICATION */
 $(function() {
-    var attendance = JSON.parse(localStorage.attendance),
-        $allMissed = $('tbody .missed-col'),
-        $allCheckboxes = $('tbody input');
 
-    // Count a student's missed days
-    function countMissing() {
-        $allMissed.each(function() {
-            var studentRow = $(this).parent('tr'),
-                dayChecks = $(studentRow).children('td').children('input'),
-                numMissed = 0;
-
-            dayChecks.each(function() {
-                if (!$(this).prop('checked')) {
-                    numMissed++;
-                }
-            });
-
-            $(this).text(numMissed);
-        });
+    var model = {
+        getAttendance() {
+            return JSON.parse(localStorage.attendance);
+        },
+        changeAttendance(newAttendance) {
+            localStorage.attendance = JSON.stringify(newAttendance);
+        }
     }
 
-    // Check boxes, based on attendace records
-    $.each(attendance, function(name, days) {
-        var studentRow = $('tbody .name-col:contains("' + name + '")').parent('tr'),
-            dayChecks = $(studentRow).children('.attend-col').children('input');
+    var controller = {
+        getAttendance() {
+            return model.getAttendance();
+        },
+        changeAttendance(newAttendance) {
+            model.changeAttendance(newAttendance);
+        },
+        init() {
+            view.init();
+        }
+    }
 
-        dayChecks.each(function(i) {
-            $(this).prop('checked', days[i]);
-        });
-    });
+    var view = {
+        init() {
+            this.$allMissed = $('tbody .missed-col');
+            this.$allCheckboxes = $('tbody input');
 
-    // When a checkbox is clicked, update localStorage
-    $allCheckboxes.on('click', function() {
-        var studentRows = $('tbody .student'),
-            newAttendance = {};
+            // When a checkbox is clicked, update localStorage
+            this.$allCheckboxes.on('click', function() {
+                var studentRows = $('tbody .student'),
+                    newAttendance = {};
 
-        studentRows.each(function() {
-            var name = $(this).children('.name-col').text(),
-                $allCheckboxes = $(this).children('td').children('input');
+                studentRows.each(function() {
+                    var name = $(this).children('.name-col').text(),
+                    $allCheckboxes = $(this).children('td').children('input');
 
-            newAttendance[name] = [];
+                    newAttendance[name] = [];
 
-            $allCheckboxes.each(function() {
-                newAttendance[name].push($(this).prop('checked'));
+                    $allCheckboxes.each(function() {
+                        newAttendance[name].push($(this).prop('checked'));
+                    });
+                });
+
+                view.countMissing();
+                controller.changeAttendance(newAttendance);
             });
-        });
 
-        countMissing();
-        localStorage.attendance = JSON.stringify(newAttendance);
-    });
+            view.render();
+        },
+        render() {
+            var attendance = controller.getAttendance();
+            // Check boxes, based on attendace records
+            $.each(attendance, function(name, days) {
+                var studentRow = $('tbody .name-col:contains("' + name + '")').parent('tr'),
+                    dayChecks = $(studentRow).children('.attend-col').children('input');
 
-    countMissing();
+                dayChecks.each(function(i) {
+                    $(this).prop('checked', days[i]);
+                });
+            });
+
+            view.countMissing();
+        },
+
+        // Count a student's missed days
+        countMissing() {
+            this.$allMissed.each(function() {
+                var studentRow = $(this).parent('tr'),
+                    dayChecks = $(studentRow).children('td').children('input'),
+                    numMissed = 0;
+
+                dayChecks.each(function() {
+                    if (!$(this).prop('checked')) {
+                        numMissed++;
+                    }
+                });
+
+                $(this).text(numMissed);
+            });
+        }
+    }
+
+    controller.init();
+
 }());
